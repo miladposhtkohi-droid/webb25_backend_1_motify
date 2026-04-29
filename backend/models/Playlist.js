@@ -18,6 +18,9 @@ const playlistSchema = new mongoose.Schema({
     ref: 'User',
     default: null,
   },
+  SharedWith: [{
+    type: String
+  }],
 });
 
 export default mongoose.model('Playlist', playlistSchema);

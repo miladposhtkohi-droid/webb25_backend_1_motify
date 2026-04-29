@@ -34,6 +34,63 @@ router.get('/my', requireAuth, async (req, res) => {
   }
 });
 
+
+
+
+
+// Get all playlists shared with the current user (requires Bearer token; optionalAuth + requireAuth).
+router.get('/shared-with-me', requireAuth, async (req, res) => {
+  try {
+    const playlists = await Playlist.find({
+      SharedWith: req.user.email,
+    })
+      .populate('songs', 'title artist durationSeconds')
+      .populate('user', 'email');
+      if(playlists.length === 0) {
+        return res.json({ message: 'No playlists shared with you yet.' });
+      }
+    res.json(playlists);
+  } catch (err) {
+    console.error('Shared with me playlists failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// add a route for sharing a playlist with another user based on their email
+router.post('/my/:id/share', requireAuth, isPlaylistOwner, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required to share a playlist' });
+    }
+    const playlist = await Playlist.findById(req.params.id);
+    if (!playlist) {
+      console.error('Share playlist: Playlist not found');
+      return res.status(404).json({ error: 'Playlist not found' });
+    }
+    console.log(playlist.SharedWith)
+    if (playlist?.SharedWith?.includes(email)) {
+      return res.status(400).json({ error: 'Playlist already shared with this email' });
+    }
+    await playlist?.SharedWith?.push(email);
+    await playlist.save();
+    res.json({ message: `Playlist shared with ${email}` });
+  } catch (err) {
+    console.error('Share playlist failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
 /**
  * Get all playlists that are publicly accessible
  */
